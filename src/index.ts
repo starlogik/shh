@@ -7,15 +7,15 @@ interface ISection {
 	[key: string]: string | ISection;
 }
 
-const logger = new Writeln('Shh');
+const logger = new Writeln('secrets-manager');
 const secretsManager = new SecretsManager({ region: 'eu-west-1' });
 const jsonRegex = /{".+":.+}/;
 
-export function syncShh<T extends {}>(filePath: string, pattern?: RegExp): T {
+export function decryptSync<T extends {}>(filePath: string, pattern?: RegExp): T {
 	let config: any;
 
 	(async function () {
-		config = await shh<T>(filePath, pattern);
+		config = await decrypt<T>(filePath, pattern);
 	})();
 
 	deasync.loopWhile(() => !config);
@@ -23,7 +23,7 @@ export function syncShh<T extends {}>(filePath: string, pattern?: RegExp): T {
 	return config as T;
 }
 
-export async function shh<T>(filePath: string, pattern = /^secret:(.+)$/): Promise<T> {
+export async function decrypt<T>(filePath: string, pattern = /^secret:(.+)$/): Promise<T> {
 	const json = await getFile(filePath);
 
 	const config = JSON.parse(json);

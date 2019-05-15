@@ -1,5 +1,5 @@
 {
-  "name": "shh",
+  "name": "secrets-manager",
   "version": "1.0.0",
   "description": "NodeJS config decryptor for AWS Secrets Manager",
   "author": "Ash Brener",

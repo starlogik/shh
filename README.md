@@ -1,5 +1,5 @@
-# Shh 
-[![CircleCI](https://circleci.com/gh/starlogik/shh.svg?style=svg)](https://circleci.com/gh/starlogik/shh)
+# secrets-manager 
+[![CircleCI](https://circleci.com/gh/starlogik/secrets-manager.svg?style=svg)](https://circleci.com/gh/starlogik/secrets-manager)
 
 A NodeJS config file decryptor for AWS Secrets Manager.
 
@@ -7,14 +7,14 @@ All contributions are welcome.
 
 ## Simple API
 
-#### shh(filePath, pattern)
+#### decrypt(filePath, pattern)
 
 * `filePath` String. Absolute path to a JSON config file.
 * `pattern` RexExp. The pattern to match key values to AWS Secret names. Defaults to any string with `secret:` prefix.
 
 Asynchronous. Returns a Promise that resolves the config file with decrypted values.
 
-#### shhSync(filePath, pattern)
+#### decryptSync(filePath, pattern)
 
 * `filePath` String. Absolute path to a JSON config file.
 * `pattern` RexExp. The pattern to match key values to AWS Secret names. Defaults to any string with `secret:` prefix.
@@ -25,8 +25,8 @@ Synchronous. Returns a config file with decrypted values.
 
 ``` js
 
-const { shh } = require('shh');
-shh(path.join(process.cwd(), 'config.json')).then(function (config) {
+const { decrypt } = require('secrets-manager');
+decrypt(path.join(process.cwd(), 'config.json')).then(function (config) {
   console.log('Decrypted config', config);
 }).catch(function (err) {
   console.error('Error', err);
@@ -38,10 +38,10 @@ shh(path.join(process.cwd(), 'config.json')).then(function (config) {
 
 ``` js
 
-const { syncShh } = require('shh');
+const { decryptSync } = require('secrets-manager');
 
 try {
-  const config = syncShh(path.join(process.cwd(), 'config.json'));
+  const config = decryptSync(path.join(process.cwd(), 'config.json'));
   console.log('Decrypted config', config);
 }
 catch (err) {
@@ -53,7 +53,7 @@ catch (err) {
 ## Installation
 
 ```
-npm install shh
+npm install secrets-manager
 ```
 
 ## License
