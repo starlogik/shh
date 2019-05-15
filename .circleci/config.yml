@@ -44,6 +44,7 @@ jobs:
           key: *dependency_cache
           paths:
             - node_modules
+            - package.json
       - persist_to_workspace:
           root: *working_directory
           paths: .
