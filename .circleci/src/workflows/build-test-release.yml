@@ -2,21 +2,12 @@ build-test-release:
   jobs:
     - checkout-code
 
-    - install-dependencies:
+    - app-build:
         requires:
           - checkout-code
 
-    - app-test:
-        requires:
-          - install-dependencies
-
-    - app-build:
-        requires:
-          - install-dependencies
-
     - deploy-npm:
         requires:
-          - app-test
           - app-build
         filters:
           branches:
@@ -26,7 +17,6 @@ build-test-release:
 
     - publish-github-release:
         requires:
-          - app-test
           - app-build
         filters:
           branches:

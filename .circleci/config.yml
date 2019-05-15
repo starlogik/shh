@@ -2,7 +2,7 @@ version: 2.1
 
 vars:
   working_directory: &working_directory ~/app
-  deploy_directory: &deploy_directory build
+  deploy_directory: &deploy_directory lib
   source_cache: &source_cache source-{{ .Branch }}-{{ .Revision }}
   dependency_cache: &dependency_cache dependency-cache-{{ checksum "package.json" }}
 
@@ -29,24 +29,24 @@ jobs:
       - restore_cache:
           key: *dependency_cache
       - run:
+          name: "Authenticate with registry"
+          command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+      - run:
+          name: "Install dependencies"
+          command: npm install
+      - run:
           name: "Build app"
           command: npm run build
-      - persist_to_workspace:
-          root: *working_directory
-          paths:
-            - *deploy_directory
-            - package.json
-
-  app-test:
-    <<: [*defaults, *node]
-    steps:
-      - restore_cache:
-          key: *source_cache
-      - restore_cache:
-          key: *dependency_cache
       - run:
           name: "Test"
           command: npm run test
+      - save_cache:
+          key: *dependency_cache
+          paths:
+            - node_modules
+      - persist_to_workspace:
+          root: *working_directory
+          paths: .
 
   checkout-code:
     <<: [*defaults, *node]
@@ -74,24 +74,6 @@ jobs:
           name: "Publish package"
           command: npm publish
 
-  install-dependencies:
-    <<: [*defaults, *node]
-    steps:
-      - restore_cache:
-          key: *source_cache
-      - restore_cache:
-          key: *dependency_cache
-      - run:
-          name: "Authenticate with registry"
-          command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-      - run:
-          name: "NPM install"
-          command: npm install
-      - save_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-          paths:
-            - node_modules
-
   publish-github-release:
     <<: [*defaults, *github]
     steps:
@@ -113,21 +95,12 @@ workflows:
     jobs:
       - checkout-code
   
-      - install-dependencies:
+      - app-build:
           requires:
             - checkout-code
   
-      - app-test:
-          requires:
-            - install-dependencies
-  
-      - app-build:
-          requires:
-            - install-dependencies
-  
       - deploy-npm:
           requires:
-            - app-test
             - app-build
           filters:
             branches:
@@ -137,7 +110,6 @@ workflows:
   
       - publish-github-release:
           requires:
-            - app-test
             - app-build
           filters:
             branches:
