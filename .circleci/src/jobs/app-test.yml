@@ -1,0 +1,10 @@
+app-test:
+  <<: [*defaults, *node]
+  steps:
+    - restore_cache:
+        key: *source_cache
+    - restore_cache:
+        key: *dependency_cache
+    - run:
+        name: "Test"
+        command: npm run test

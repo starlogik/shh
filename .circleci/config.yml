@@ -1,0 +1,146 @@
+version: 2.1
+
+vars:
+  working_directory: &working_directory ~/app
+  deploy_directory: &deploy_directory build
+  source_cache: &source_cache source-{{ .Branch }}-{{ .Revision }}
+  dependency_cache: &dependency_cache dependency-cache-{{ checksum "package.json" }}
+
+defaults: &defaults
+  working_directory: *working_directory
+  environment:
+    DEPLOY_DIRECTORY: *deploy_directory
+
+os:
+  node: &node
+    docker:
+      - image: circleci/node:10.15.3
+  
+  github: &github
+    docker:
+      - image: cibuilds/github:0.10
+
+jobs:
+  app-build:
+    <<: [*defaults, *node]
+    steps:
+      - restore_cache:
+          key: *source_cache
+      - restore_cache:
+          key: *dependency_cache
+      - run:
+          name: "Build app"
+          command: npm run build
+      - persist_to_workspace:
+          root: *working_directory
+          paths:
+            - *deploy_directory
+            - package.json
+
+  app-test:
+    <<: [*defaults, *node]
+    steps:
+      - restore_cache:
+          key: *source_cache
+      - restore_cache:
+          key: *dependency_cache
+      - run:
+          name: "Test"
+          command: npm run test
+
+  checkout-code:
+    <<: [*defaults, *node]
+    steps:
+      - restore_cache:
+          keys:
+            - source-{{ .Branch }}-{{ .Revision }}
+            - source-{{ .Branch }}-
+            - source-
+      - checkout
+      - save_cache:
+          key: *source_cache
+          paths:
+            - *working_directory
+
+  deploy-npm:
+    <<: [*defaults, *node]
+    steps:
+      - attach_workspace:
+          at: *working_directory
+      - run:
+          name: "Authenticate with registry"
+          command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+      - run:
+          name: "Publish package"
+          command: npm publish
+
+  install-dependencies:
+    <<: [*defaults, *node]
+    steps:
+      - restore_cache:
+          key: *source_cache
+      - restore_cache:
+          key: *dependency_cache
+      - run:
+          name: "Authenticate with registry"
+          command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+      - run:
+          name: "NPM install"
+          command: npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+
+  publish-github-release:
+    <<: [*defaults, *github]
+    steps:
+      - restore_cache:
+          key: *source_cache
+      - restore_cache:
+          key: *dependency_cache
+      - attach_workspace:
+          at: *working_directory
+      - run:
+          name: "Publish Release to GitHub"
+          command: |
+            VERSION=$(awk -F\" '/"version":/ {print $4}' package.json)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ${CIRCLE_WORKING_DIRECTORY}
+
+workflows:
+  version: 2.1
+  build-test-release:
+    jobs:
+      - checkout-code
+  
+      - install-dependencies:
+          requires:
+            - checkout-code
+  
+      - app-test:
+          requires:
+            - install-dependencies
+  
+      - app-build:
+          requires:
+            - install-dependencies
+  
+      - deploy-npm:
+          requires:
+            - app-test
+            - app-build
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+  
+      - publish-github-release:
+          requires:
+            - app-test
+            - app-build
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /^\d+\.\d+\.\d+$/

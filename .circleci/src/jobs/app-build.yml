@@ -1,0 +1,15 @@
+app-build:
+  <<: [*defaults, *node]
+  steps:
+    - restore_cache:
+        key: *source_cache
+    - restore_cache:
+        key: *dependency_cache
+    - run:
+        name: "Build app"
+        command: npm run build
+    - persist_to_workspace:
+        root: *working_directory
+        paths:
+          - *deploy_directory
+          - package.json

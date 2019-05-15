@@ -1,0 +1,7 @@
+node: &node
+  docker:
+    - image: circleci/node:10.15.3
+
+github: &github
+  docker:
+    - image: cibuilds/github:0.10

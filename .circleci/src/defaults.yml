@@ -1,0 +1,4 @@
+defaults: &defaults
+  working_directory: *working_directory
+  environment:
+    DEPLOY_DIRECTORY: *deploy_directory

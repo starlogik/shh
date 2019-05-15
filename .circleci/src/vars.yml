@@ -1,0 +1,4 @@
+working_directory: &working_directory ~/app
+deploy_directory: &deploy_directory build
+source_cache: &source_cache source-{{ .Branch }}-{{ .Revision }}
+dependency_cache: &dependency_cache dependency-cache-{{ checksum "package.json" }}

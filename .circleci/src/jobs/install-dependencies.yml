@@ -1,0 +1,17 @@
+install-dependencies:
+  <<: [*defaults, *node]
+  steps:
+    - restore_cache:
+        key: *source_cache
+    - restore_cache:
+        key: *dependency_cache
+    - run:
+        name: "Authenticate with registry"
+        command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+    - run:
+        name: "NPM install"
+        command: npm install
+    - save_cache:
+        key: dependency-cache-{{ checksum "package.json" }}
+        paths:
+          - node_modules

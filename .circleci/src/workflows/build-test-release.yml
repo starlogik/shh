@@ -1,0 +1,35 @@
+build-test-release:
+  jobs:
+    - checkout-code
+
+    - install-dependencies:
+        requires:
+          - checkout-code
+
+    - app-test:
+        requires:
+          - install-dependencies
+
+    - app-build:
+        requires:
+          - install-dependencies
+
+    - deploy-npm:
+        requires:
+          - app-test
+          - app-build
+        filters:
+          branches:
+            only: master
+          tags:
+            only: /^\d+\.\d+\.\d+$/
+
+    - publish-github-release:
+        requires:
+          - app-test
+          - app-build
+        filters:
+          branches:
+            only: master
+          tags:
+            only: /^\d+\.\d+\.\d+$/

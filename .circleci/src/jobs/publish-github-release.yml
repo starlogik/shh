@@ -1,0 +1,14 @@
+publish-github-release:
+  <<: [*defaults, *github]
+  steps:
+    - restore_cache:
+        key: *source_cache
+    - restore_cache:
+        key: *dependency_cache
+    - attach_workspace:
+        at: *working_directory
+    - run:
+        name: "Publish Release to GitHub"
+        command: |
+          VERSION=$(awk -F\" '/"version":/ {print $4}' package.json)
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ${CIRCLE_WORKING_DIRECTORY}

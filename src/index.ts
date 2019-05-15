@@ -1,0 +1,96 @@
+import { SecretsManager } from 'aws-sdk';
+import { Writeln } from 'writeln';
+import fs from 'graceful-fs';
+import deasync from 'deasync';
+
+interface ISection {
+	[key: string]: string | ISection;
+}
+
+const logger = new Writeln('Shh');
+const secretsManager = new SecretsManager({ region: 'eu-west-1' });
+const jsonRegex = /{".+":.+}/;
+
+export function syncShh<T extends {}>(filePath: string, pattern?: RegExp): T {
+	let config: any;
+
+	(async function () {
+		config = await shh<T>(filePath, pattern);
+	})();
+
+	deasync.loopWhile(() => !config);
+
+	return config as T;
+}
+
+export async function shh<T>(filePath: string, pattern = /^secret:(.+)$/): Promise<T> {
+	const json = await getFile(filePath);
+
+	const config = JSON.parse(json);
+
+	await walkAndDecrypt(config, pattern);
+
+	return config as T;
+}
+
+async function walkAndDecrypt(section: ISection, pattern: RegExp) {
+	for (const key in section) {
+		const val = section[key];
+
+		if (typeof(val) === 'string') {
+			const match = val.match(pattern);
+
+			if (match !== null) {
+				const decryptedVal = await decryptSecret(match[1]);
+
+				if (decryptedVal)
+					section[key] = decryptedVal;
+			}
+		}
+		else {
+			await walkAndDecrypt(val, pattern);
+		}
+	}
+}
+
+async function decryptSecret(SecretId: string) {
+	try {
+		const { SecretString, SecretBinary } = await secretsManager.getSecretValue({ SecretId }).promise();
+
+		if (SecretString) {
+			if (jsonRegex.test(SecretString)) {
+				logger.debug(`Decrypted secret JSON "${ SecretId }"`);
+				return JSON.parse(SecretString);
+			}
+			else {
+				logger.debug(`Decrypted secret string "${ SecretId }"`);
+				return SecretString;
+			}
+		}
+		else if (SecretBinary) {
+			logger.debug(`Decrypted secret binary "${ SecretId }"`);
+
+			const buffer = Buffer.from(SecretBinary.toString(), 'base64');
+			return buffer.toString('ascii');
+		}
+		else {
+			throw new Error(`Could not find value for "${ SecretId }"`);
+		}
+	}
+	catch (err) {
+		logger.error(err.message, err);
+	}
+}
+
+function getFile(filePath: string) {
+	return new Promise<string>(function (resolve, reject) {
+		fs.readFile(filePath, 'ascii', (err, data) => {
+			if (err) {
+				reject(err);
+			}
+			else {
+				resolve(data);
+			}
+		});
+	});
+}

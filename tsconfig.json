@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "target": "esnext",
+    "allowJs": false,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "rootDir": "src",
+
+    "declaration": true,
+    "module": "commonjs",
+    "isolatedModules": false,
+    "noEmit": false,
+    "lib": [
+      "es2015"
+    ],
+    "outDir": "./lib"
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
