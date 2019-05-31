@@ -1,2 +1,2 @@
 require('source-map-support/register');
-require('./lib');
+module.exports = require('./lib');
