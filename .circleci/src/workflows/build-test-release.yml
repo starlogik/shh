@@ -6,7 +6,7 @@ build-test-release:
         requires:
           - checkout-code
 
-    - deploy-npm:
+    - publish-github-release:
         requires:
           - app-build
         filters:
@@ -15,9 +15,9 @@ build-test-release:
           tags:
             only: /^\d+\.\d+\.\d+$/
 
-    - publish-github-release:
+    - deploy-npm:
         requires:
-          - app-build
+          - publish-github-release
         filters:
           branches:
             only: master

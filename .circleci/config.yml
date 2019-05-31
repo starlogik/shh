@@ -100,7 +100,7 @@ workflows:
           requires:
             - checkout-code
   
-      - deploy-npm:
+      - publish-github-release:
           requires:
             - app-build
           filters:
@@ -109,9 +109,9 @@ workflows:
             tags:
               only: /^\d+\.\d+\.\d+$/
   
-      - publish-github-release:
+      - deploy-npm:
           requires:
-            - app-build
+            - publish-github-release
           filters:
             branches:
               only: master
