@@ -4,7 +4,6 @@ vars:
   working_directory: &working_directory ~/app
   deploy_directory: &deploy_directory lib
   source_cache: &source_cache source-{{ .Branch }}-{{ .Revision }}
-  dependency_cache: &dependency_cache dependency-cache-{{ checksum "package.json" }}
 
 defaults: &defaults
   working_directory: *working_directory
@@ -26,8 +25,6 @@ jobs:
     steps:
       - restore_cache:
           key: *source_cache
-      - restore_cache:
-          key: *dependency_cache
       - run:
           name: "Authenticate with registry"
           command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
@@ -40,11 +37,6 @@ jobs:
       - run:
           name: "Test"
           command: npm run test
-      - save_cache:
-          key: *dependency_cache
-          paths:
-            - node_modules
-            - package.json
       - persist_to_workspace:
           root: *working_directory
           paths: .
@@ -80,15 +72,13 @@ jobs:
     steps:
       - restore_cache:
           key: *source_cache
-      - restore_cache:
-          key: *dependency_cache
       - attach_workspace:
           at: *working_directory
       - run:
           name: "Publish Release to GitHub"
           command: |
             VERSION=$(awk -F\" '/"version":/ {print $4}' package.json)
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ${CIRCLE_WORKING_DIRECTORY}
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ~/app
 
 workflows:
   version: 2.1
