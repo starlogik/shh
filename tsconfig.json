@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "incremental": true,
-    "target": "es2015",
+    "target": "esnext",
     "allowJs": false,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
